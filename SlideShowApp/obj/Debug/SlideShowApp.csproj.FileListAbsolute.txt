@@ -1,0 +1,13 @@
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\bin\Debug\SlideShowApp.exe.config
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\bin\Debug\SlideShowApp.exe
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\bin\Debug\SlideShowApp.pdb
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\bin\Debug\MaterialSkin.dll
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.csproj.AssemblyReference.cache
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.csproj.SuggestedBindingRedirects.cache
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.Properties.Resources.resources
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.csproj.GenerateResource.cache
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.csproj.CoreCompileInputs.cache
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.csproj.CopyComplete
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.exe
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.pdb
+C:\tmp\slideshowapp\SlideShowApp\SlideShowApp\obj\Debug\SlideShowApp.Form1.resources
