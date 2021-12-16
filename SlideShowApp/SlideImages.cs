@@ -9,31 +9,32 @@ using OpenCvSharp;
 
 namespace SlideShowApp
 {
-    internal class SlideImages : IDisposable
+    class SlideImageCreator
     {
         IReadOnlyCollection<string> originalImagePathList_;
         List<Mat> slideImages_;
+        List<Mat> photos_;
         private bool disposed_ = false;
 
-        SlideImages(List<string> imagePathList)
+        public SlideImageCreator(List<string> imagePathList)
         {
             originalImagePathList_ = imagePathList;
             slideImages_ = new List<Mat>();
-
+            photos_ = new List<Mat>();
         }
 
         Mat? GetSlideImage(int index)
         {
-            return (slideImages_.Count < index && index > 0)? slideImages_[index] : null;
+            return (slideImages_.Count < index && index > 0) ? slideImages_[index] : null;
         }
 
         void AddSlideImage(Mat source)
         {
-            if(source is not null)
+            if (source is not null)
                 slideImages_.Add(source);
         }
 
-        ~SlideImages()
+        ~SlideImageCreator()
         {
             Dispose(false);
         }
@@ -50,16 +51,35 @@ namespace SlideShowApp
             {
                 if (disposing)
                 {
-                    foreach(var mat in slideImages_){mat.Dispose();}
+                    foreach (var mat in slideImages_) { mat.Dispose(); }
+                    foreach (var mat in photos_) { mat.Dispose(); }
                 }
                 disposed_ = true;
             }
         }
 
-    }
+        public int LoadPhoto(int videoWidth, int videoHeight)
+        {
+            try
+            {
+                foreach (var photoPath in originalImagePathList_)
+                {
+                    using (Mat photo = new Mat(photoPath))
+                    {
+                        var scale = GetPhotoScale(photo, videoWidth, videoHeight);
+                        Mat memoryImage = new Mat((int)(photo.Height * scale), (int)(photo.Width * scale), MatType.CV_32FC3);
+                        Cv2.Resize(photo, memoryImage, memoryImage.Size());
+                        photos_.Add(memoryImage);
+                    }
+                }
 
-    class SlideImageCreator
-    {
+            }catch(Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                return -1;
+            }
+            return 0;
+        }
         public static int GetImamgeArea(Mat image)
         {
             return image?.Width * image?.Height ?? 0;
@@ -100,17 +120,19 @@ namespace SlideShowApp
             return scale;
         }
 
-        public static double GetMainImageScale(Mat mainImage, Mat slideImage)
+        public static double GetPhotoScale(Mat mainImage, int videoWidth, int videoHeight)
         {
             return mainImage.Width > mainImage.Height ?
-                (slideImage.Width * mainImageScale) / mainImage.Width :
-                (slideImage.Height * mainImageScale) / mainImage.Height;
+                (videoWidth * mainImageScale_widthLong) / mainImage.Width :
+                (videoHeight * mainImageScale_heightLong) / mainImage.Height;
         }
 
-        public static void PutSubImage(string subImagePath, Mat backGroundImage, int angleMax)
+        public void PutSubImage(int photoIndex, Mat backGroundImage, int angleMax)
         {
-            using (Mat subImage = new Mat(subImagePath))
+            Mat subImage = new Mat();
+            try
             {
+                subImage = photos_[photoIndex].Clone();
                 if (subImage.Width == 0 || subImage.Height == 0) return;
                 TransToGray(subImage);
                 createBoxedImage(subImage);
@@ -118,27 +140,46 @@ namespace SlideShowApp
                 var random = new Random();
                 var scale = GetSubImageScale(subImage, backGroundImage);
                 var angle = random.Next(0 - angleMax, angleMax);
-                var pos = new Point(random.Next(0 - backGroundImage.Width / 3, (int)(backGroundImage.Width * 1.3)),       //貼り付ける画像の中心位置
-                                random.Next(0 - backGroundImage.Height / 3, (int)(backGroundImage.Height * 1.3)));      //
+                var pos = new Point(random.Next(0 - backGroundImage.Width / 6, (int)(backGroundImage.Width)),       //貼り付ける画像の中心位置
+                                random.Next(0 - backGroundImage.Height / 6, (int)(backGroundImage.Height)));      //
 
                 PutRotateImage(subImage, backGroundImage, scale, angle, pos);
+
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
+            finally
+            {
+                subImage.Dispose();
             }
         }
 
-        public static void PutMainImage(string mainImagePath, Mat backGroundImage, int angleMax)
+        public void PutMainImage(int photoIndex, Mat backGroundImage, int angleMax)
         {
-            using (Mat mainImage = new Mat(mainImagePath))
+            Mat mainImage = new Mat();
+            try
             {
+                mainImage = photos_[photoIndex].Clone();
                 createBoxedImage(mainImage);
 
                 var random = new Random();
-                var scale = GetMainImageScale(mainImage, backGroundImage);
                 var angle = random.Next(0 - angleMax, angleMax);
-                var pos = new Point(mainImage.Width/2, mainImage.Height/2);
+                var pos = new Point(mainImage.Width / 2, mainImage.Height / 2);
 
                 Cv2.CvtColor(backGroundImage, backGroundImage, ColorConversionCodes.GRAY2BGR);
 
-                PutRotateImage(mainImage, backGroundImage, scale, angle, pos);
+                PutRotateImage(mainImage, backGroundImage, 1, angle, pos);
+
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+            }
+            finally
+            {
+                mainImage.Dispose();
             }
         }
 
@@ -158,19 +199,18 @@ namespace SlideShowApp
         const int subImageAngleMax = 60;
         const int mainImageAngleMax = 10;
         const double subImageScale = 5;
-        const double mainImageScale = 0.8;
-        public static void Create(int mainImageIndex, List<string> ImagePathList, Mat SlideImage)
+        const double mainImageScale_widthLong = 0.7;
+        const double mainImageScale_heightLong = 1.0;
+        public void Create(int mainImageIndex, List<string> ImagePathList, Mat SlideImage)
         {
             var random = new Random();
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 200; i++)
             {
-                PutSubImage(ImagePathList[random.Next(0, ImagePathList.Count())],
+                PutSubImage(random.Next(0, ImagePathList.Count()),
                     SlideImage, subImageAngleMax);
             }
 
-            PutMainImage(ImagePathList[mainImageIndex], SlideImage, mainImageAngleMax);
-            Cv2.ImShow("main", SlideImage);
-            Cv2.WaitKey(0);
+            PutMainImage(mainImageIndex, SlideImage, mainImageAngleMax);
         }
 
 

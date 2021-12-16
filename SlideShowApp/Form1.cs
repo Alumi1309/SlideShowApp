@@ -27,17 +27,23 @@ namespace SlideShowApp
         private void SlideShowApp_Load(object sender, EventArgs e)
         {
             string[] files = System.IO.Directory.GetFiles(
-            //    @"Z:\Share\_2021\2021.12\20211214_家族写真", "*", System.IO.SearchOption.AllDirectories);
-                @"C:\Users\S137092\Pictures", "*", System.IO.SearchOption.AllDirectories);
+                @"Z:\Share\_2021\2021.12\20211214_家族写真", "*", System.IO.SearchOption.AllDirectories);
+            //    @"C:\Users\S137092\Pictures", "*", System.IO.SearchOption.AllDirectories);
 
             List<string> filelist = new List<string>();
             filelist.AddRange(files);
 
+            var slideImageCreator = new SlideImageCreator(filelist);
+            slideImageCreator.LoadPhoto(1600, 900);
+            
             using (Mat slideimg = new Mat(900, 1600, MatType.CV_32FC3))
             {
-                SlideImageCreator.Create(10, filelist, slideimg);
-                Cv2.ImShow("main", slideimg);
-                Cv2.WaitKey(0);
+                for(int i = 0; i < filelist.Count; i++)
+                {
+                    slideImageCreator.Create(i, filelist, slideimg);
+                    Cv2.ImShow("main", slideimg);
+                    Cv2.ImWrite(i.ToString() + ".jpg", slideimg);
+                }
             }
         }
     }
