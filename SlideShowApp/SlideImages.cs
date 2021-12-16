@@ -60,15 +60,30 @@ namespace SlideShowApp
 
     class SlideImageCreator
     {
-        public static int GetImamgeHerfOuterPerimeter(Mat image)
+        public static int GetImamgeArea(Mat image)
         {
-            return image?.Width + image?.Height ?? 0;
+            return image?.Width * image?.Height ?? 0;
+        }
+
+        public static string GetMatValStr(Mat mat)
+        {
+            string log = "";
+            for (int j = 0; j < 2; j++)
+            {
+                log += "{ ";
+                for (int i = 0; i < 3; i++)
+                {
+                    log += mat.At<double>(j, i).ToString() + " ";
+                }
+                log += "}";
+            }
+            return log;
         }
 
         public static void createBoxedImage(Mat image)
         {
             var rect = new Rect(0,0,image.Width,image.Height);
-            Cv2.Rectangle(image, rect, Scalar.White, (image.Width + image.Height) / 20);
+            Cv2.Rectangle(image, rect, Scalar.White, (image.Width + image.Height) / 60);
         }
 
         public static void TransToGray(Mat image)
@@ -78,30 +93,33 @@ namespace SlideShowApp
 
         public static double GetSubImageScale(Mat subImage, Mat slideImage)
         {
-            return ((double)(GetImamgeHerfOuterPerimeter(slideImage) / (double)GetImamgeHerfOuterPerimeter(subImage))) 
-                / 2.0;
+            var slideImageArea = (double)GetImamgeArea(slideImage);
+            var subImageArea = (double)GetImamgeArea(subImage);
+            var scale = (slideImageArea / subImageArea) / subImageScale;
+            scale =  Math.Sqrt(scale);
+            return scale;
         }
 
         public static double GetMainImageScale(Mat mainImage, Mat slideImage)
         {
-            double scale = 0.9;
             return mainImage.Width > mainImage.Height ?
-                (slideImage.Width * scale) / mainImage.Width :
-                (slideImage.Height * scale) / mainImage.Height;
+                (slideImage.Width * mainImageScale) / mainImage.Width :
+                (slideImage.Height * mainImageScale) / mainImage.Height;
         }
 
         public static void PutSubImage(string subImagePath, Mat backGroundImage, int angleMax)
         {
             using (Mat subImage = new Mat(subImagePath))
             {
+                if (subImage.Width == 0 || subImage.Height == 0) return;
                 TransToGray(subImage);
                 createBoxedImage(subImage);
 
                 var random = new Random();
                 var scale = GetSubImageScale(subImage, backGroundImage);
                 var angle = random.Next(0 - angleMax, angleMax);
-                var pos = new Point(random.Next(0 - (backGroundImage.Width/2), backGroundImage.Width),       //貼り付ける画像の中心位置
-                                random.Next(0 - (backGroundImage.Height / 2), backGroundImage.Height));      //
+                var pos = new Point(random.Next(0 - backGroundImage.Width / 3, (int)(backGroundImage.Width * 1.3)),       //貼り付ける画像の中心位置
+                                random.Next(0 - backGroundImage.Height / 3, (int)(backGroundImage.Height * 1.3)));      //
 
                 PutRotateImage(subImage, backGroundImage, scale, angle, pos);
             }
@@ -126,10 +144,11 @@ namespace SlideShowApp
 
         public static void PutRotateImage(Mat rotateImage, Mat backGroundImage, double scale, int angle, Point pos)
         {
-            Mat rotationMatrix = Cv2.GetRotationMatrix2D(pos, angle, scale);
-            rotationMatrix.At<double>(2, 0) = -(rotateImage.Width - backGroundImage.Width) / 2;
-            rotationMatrix.At<double>(2, 2) = -(rotateImage.Height - backGroundImage.Height) / 2;
+            Point imageCenter = new Point(rotateImage.Width / 2, rotateImage.Height / 2);
+            Mat rotationMatrix = Cv2.GetRotationMatrix2D(imageCenter, angle, scale);
 
+            rotationMatrix.At<double>(0, 2) -= pos.X - (backGroundImage.Width/2);
+            rotationMatrix.At<double>(1, 2) -= pos.Y - (backGroundImage.Height/2);
 
             Cv2.WarpAffine(rotateImage, backGroundImage, rotationMatrix, backGroundImage.Size(),
                 borderMode: BorderTypes.Transparent);
@@ -137,11 +156,13 @@ namespace SlideShowApp
         }
 
         const int subImageAngleMax = 60;
-        const int mainImageAngleMax = 20;
+        const int mainImageAngleMax = 10;
+        const double subImageScale = 5;
+        const double mainImageScale = 0.8;
         public static void Create(int mainImageIndex, List<string> ImagePathList, Mat SlideImage)
         {
             var random = new Random();
-            for(int i = 0; i < 30; i++)
+            for (int i = 0; i < 50; i++)
             {
                 PutSubImage(ImagePathList[random.Next(0, ImagePathList.Count())],
                     SlideImage, subImageAngleMax);
