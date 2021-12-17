@@ -9,7 +9,7 @@ using OpenCvSharp;
 
 namespace SlideShowApp
 {
-    class SlideImageCreator
+    class SlideImageCreator : IDisposable
     {
         IReadOnlyCollection<string> originalImagePathList_;
         List<Mat> slideImages_;
@@ -149,6 +149,7 @@ namespace SlideShowApp
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
+                System.Diagnostics.Debug.WriteLine($"PutSubImage : index={photoIndex}");
             }
             finally
             {
@@ -175,6 +176,7 @@ namespace SlideShowApp
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"PutMainImage : index={photoIndex}");
                 System.Diagnostics.Debug.WriteLine(ex.ToString());
             }
             finally
